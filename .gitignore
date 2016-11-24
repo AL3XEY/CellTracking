@@ -1,0 +1,20 @@
+#Project Specific
+tp3
+*.img
+*.hdr
+
+#Linux system
+*~
+
+#C / C++ /Executable
+*.out
+*.app
+*.exe
+
+#Archives
+*.zip
+*.tar.gz
+*.rar
+
+#Misc.
+*.pdf
