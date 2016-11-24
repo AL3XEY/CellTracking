@@ -7,6 +7,7 @@ tp3
 *~
 
 #C / C++ /Executable
+*.o
 *.out
 *.app
 *.exe
