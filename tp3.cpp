@@ -14,7 +14,7 @@ int main(int argc,char **argv)
 	float voxelsize[3];
 	/* Load in Analyze format and get the voxel size in an array */
 	if(argc<2){
-		std::cerr << "Usage : ./" + prgrm + " <img> [threshold]" << std::endl;
+		std::cerr << "Usage : " + prgrm + " <img> [threshold] [erosion count] [dilation count]" << std::endl;
 		return -1;
 	}else{
 		img.load_analyze(argv[1],voxelsize);
@@ -22,17 +22,17 @@ int main(int argc,char **argv)
 	
 	int threshold, erosionCount, dilationCount;
 	
-	threshold = 250;
+	threshold = 350;
 	if(argc>2){
 		threshold = atoi(argv[2]);
 	}
 	
-	erosionCount = 3;
+	erosionCount = 8;
 	if(argc>3){
 		erosionCount = atoi(argv[3]);
 	}
 	
-	dilationCount = 3;
+	dilationCount = 8;
 	if(argc>4){
 		dilationCount = atoi(argv[4]);
 	}
@@ -47,6 +47,63 @@ int main(int argc,char **argv)
 	/* Looak at normalization at http://cimg.eu/reference/group__cimg__displays.html */
 	CImgDisplay disp(512,512,"");    
 	CImgDisplay dispHist;
+	
+	// PROCESSING
+	
+	//mpr_img2.laplacian();
+	//3D
+	//CImg<unsigned char> meanMask(meanMaskDimension,meanMaskDimension,meanMaskDimension,1,0);
+	//CImg<unsigned char> laplacianMask(3,3,3,1,0);
+	//laplacianMask.fill(1);
+	////meani
+	//mpr_img2.convolve(laplacianMask);
+	
+	//Mean filter
+	int meanMaskDimension = 3;
+	//3D
+	CImg<unsigned char> meanMask(meanMaskDimension,meanMaskDimension,meanMaskDimension,1,0);
+	meanMask.fill(1);
+	img.convolve(meanMask);
+	
+	int off;
+	cimg_foroff(img,off){
+		if(img[off]<threshold){
+			img[off]=0;
+		//		
+		}else{
+			img[off]=255;
+		//
+		}
+	}
+	
+	//TODO test this median filter + TODO test with different parameters
+	//img.blur_median(5);
+	
+	//Close : erode, then dilate
+	img.erode(erosionCount);
+	img.dilate(dilationCount);
+	
+	//Labelize
+	img.label();
+	
+	//Compute features for each label
+	/*int labelCount = img.max();
+	//CImg< float > histogram = mpr_img.histogram(labelCount);
+	int regionSize[labelCount], regionX[labelCount], regionY[labelCount];
+	int i;
+	for(i=0;i<labelCount;i++){
+		regionSize[i]=0;
+		regionX[i]=0;
+		regionY[i]=0;
+	}
+	cimg_foroff(img,off){
+		regionSize[(int)img[off]]++;
+		//regionX[(int)mpr_img[off]]+=
+		//regionY[(int)mpr_img[off]]+=
+		//std::cout << regionSize[(int)mpr_img[off]] << std::endl;
+	}*/
+	
+	// END OF PROCESSING
 	
 	/* The 3 displayed slices of the MPR visualisation */
 	int displayedSlice[]={dim[0]/2,dim[1]/2,dim[2]/2}; 
@@ -159,72 +216,12 @@ int main(int argc,char **argv)
 		{
 			/* Create a 2D image based on the MPR projections given by a projection point which is the intersection of the displayed slices */
 			CImg<> mpr_img=img.get_projections2d(displayedSlice[0],displayedSlice[1],displayedSlice[2]);  
-			CImg<> mpr_img2=img.get_projections2d(displayedSlice[0],displayedSlice[1],displayedSlice[2]);  
 				
 			/* The MPR image has a given size. It needs to be resized in order to fit at best in the display window */
 			mpr_img.resize(512,512); 
-			mpr_img2.resize(512,512);
-			
-			mpr_img2.laplacian();
-			//3D
-			//CImg<unsigned char> meanMask(meanMaskDimension,meanMaskDimension,meanMaskDimension,1,0);
-			//2D
-			CImg<unsigned char> laplacianMask(3,3,1,1,0);
-			laplacianMask.fill(1);
-			//meani
-			mpr_img2.convolve(laplacianMask);
-			
-			//Mean filter
-			int meanMaskDimension = 3;
-			//3D
-			//CImg<unsigned char> meanMask(meanMaskDimension,meanMaskDimension,meanMaskDimension,1,0);
-			//2D
-			CImg<unsigned char> meanMask(meanMaskDimension,meanMaskDimension,1,1,0);
-			meanMask.fill(1);
-			mpr_img.convolve(meanMask);
-			
-			int off;
-			cimg_foroff(mpr_img,off){
-				if(mpr_img[off]<threshold){
-					mpr_img[off]=0;
-				//		
-				}else{
-					mpr_img[off]=255;
-				//
-				}
-			}
-			
-			//TODO test this median filter + TODO test with different parameters
-			//mpr_img.blur_median(5);
-			
-			//Close : erode, then dilate
-			mpr_img.erode(erosionCount);
-			mpr_img.dilate(dilationCount);
-			
-			//Labelize
-			mpr_img.label();
-			
-			//Compute features for each label
-			int labelCount = mpr_img.max();
-			//CImg< float > histogram = mpr_img.histogram(labelCount);
-			int regionSize[labelCount], regionX[labelCount], regionY[labelCount];
-			int i;
-			for(i=0;i<labelCount;i++){
-				regionSize[i]=0;
-				regionX[i]=0;
-				regionY[i]=0;
-			}
-			cimg_foroff(mpr_img,off){
-				regionSize[(int)mpr_img[off]]++;
-				//regionX[(int)mpr_img[off]]+=
-				//regionY[(int)mpr_img[off]]+=
-				//std::cout << regionSize[(int)mpr_img[off]] << std::endl;
-			}
-			
+
 			/* Display the MPR image in the display windows */
-			//disp.display(mpr_img2);
 			disp.display(mpr_img);
-			//dispHist.display(histogram);
 			
 			/* To avoid repetitive continuous redrawing */
 			redraw=false;
