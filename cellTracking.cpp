@@ -14,7 +14,7 @@ int main(int argc,char **argv)
 	float voxelsize[3];
 	/* Load in Analyze format and get the voxel size in an array */
 	if(argc<2){
-		std::cerr << "Usage : " + prgrm + " <img> [threshold] [erosion count] [dilation count]" << std::endl;
+		std::cerr << "Usage : " + prgrm + " <Analyze7.5 image> [threshold] [erosion count] [dilation count]" << std::endl;
 		return -1;
 	}else{
 		img.load_analyze(argv[1],voxelsize);
@@ -58,9 +58,8 @@ int main(int argc,char **argv)
 	////meani
 	//mpr_img2.convolve(laplacianMask);
 	
-	//Mean filter
+	//3D Mean filter
 	int meanMaskDimension = 3;
-	//3D
 	CImg<unsigned char> meanMask(meanMaskDimension,meanMaskDimension,meanMaskDimension,1,0);
 	meanMask.fill(1);
 	img.convolve(meanMask);
@@ -69,10 +68,8 @@ int main(int argc,char **argv)
 	cimg_foroff(img,off){
 		if(img[off]<threshold){
 			img[off]=0;
-		//		
 		}else{
 			img[off]=255;
-		//
 		}
 	}
 	
@@ -86,24 +83,41 @@ int main(int argc,char **argv)
 	//Labelize
 	img.label();
 	
-	//Compute features for each label
-	/*int labelCount = img.max();
-	//CImg< float > histogram = mpr_img.histogram(labelCount);
-	int regionSize[labelCount], regionX[labelCount], regionY[labelCount];
+	//Compute features for each label (CoG in the first place)
+	int labelCount = img.max();
+	//printf("labelCount : %d\n",labelCount);
+	int regionSize[labelCount], regionXTotal[labelCount], regionYTotal[labelCount], regionZTotal[labelCount];
+	float regionX[labelCount], regionY[labelCount], regionZ[labelCount];
 	int i;
 	for(i=0;i<labelCount;i++){
 		regionSize[i]=0;
+		regionXTotal[i]=0;
+		regionYTotal[i]=0;
+		regionZTotal[i]=0;
 		regionX[i]=0;
 		regionY[i]=0;
+		regionZ[i]=0;
 	}
-	cimg_foroff(img,off){
-		regionSize[(int)img[off]]++;
-		//regionX[(int)mpr_img[off]]+=
-		//regionY[(int)mpr_img[off]]+=
-		//std::cout << regionSize[(int)mpr_img[off]] << std::endl;
-	}*/
+	int x,y,z;
+	cimg_forXYZ(img,x,y,z){
+		regionSize[(int)img(x,y,z)]++;
+		regionXTotal[(int)img(x,y,z,0)]+=x;
+		regionYTotal[(int)img(x,y,z,0)]+=y;
+		regionZTotal[(int)img(x,y,z,0)]+=z;
+		img(x,y,z,0)=255;
+		//printf("%d\t %d\t %d\n",x,y,z);
+	}
+	
+	for(i=0;i<labelCount;i++){
+		regionX[i]=(float)regionXTotal[i]/(float)regionSize[i];
+		regionY[i]=(float)regionYTotal[i]/(float)regionSize[i];
+		regionZ[i]=(float)regionZTotal[i]/(float)regionSize[i];
+		printf("CoG of cell %d = (%f, %f, %f)\n",i, regionX[i], regionY[i], regionZ[i]);
+	}
 	
 	// END OF PROCESSING
+	
+	// DISPLAY
 	
 	/* The 3 displayed slices of the MPR visualisation */
 	int displayedSlice[]={dim[0]/2,dim[1]/2,dim[2]/2}; 
@@ -227,6 +241,9 @@ int main(int argc,char **argv)
 			redraw=false;
 		}
 	}
+	
+	// DISPLAY END
+	
 	return 0;
 }
 
