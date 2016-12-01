@@ -1,11 +1,11 @@
-all: tp3
+all: cellTracking
 
-run: tp3 
-	./tp3 datas/stack-0.img
+run: cellTracking 
+	./cellTracking datas/stack-0.img
 
-tp3: tp3.cpp CImg.h
-	g++ -o tp3 tp3.cpp -O2 -L/usr/X11R6/lib  -lm  -lpthread -lX11
+cellTracking: cellTracking.cpp CImg.h
+	g++ -o cellTracking cellTracking.cpp -O2 -L/usr/X11R6/lib  -lm  -lpthread -lX11
 	
 clean:
-	rm -f *.o *~ tp3
+	rm -f *.o *~ cellTracking
 	clear
